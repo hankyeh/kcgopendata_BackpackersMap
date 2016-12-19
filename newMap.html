@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Kaohsiung Backpackers Map</title>
+    <meta name="viewport" content="initial-scale=1.0">
+    <meta charset="utf-8">
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      #map {
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+	<script src="https://code.jquery.com/jquery-3.1.1.min.js" ></script>
+	<script src="jsondata.js" ></script>
+    <script>
+	
+	
+	var cbikeJsonObj = JSON.parse(cbikeStr);
+	var iTaiwanJsonObj = JSON.parse(itaiwanStr);
+	var atmJsonObj = JSON.parse(atmStr);
+	var publicToiletJsonObj = JSON.parse(publicToiletStr);
+	
+	var cbikeJsonMK = new Array();
+	var iTaiwanJsonMK = new Array();
+	var atmJsonMK = new Array();
+	var publicToiletJsonMK = new Array();
+	
+	var cbMkCluster;	
+	var iTaiwanMkCluster;
+	var atmMkCluster;
+	var publicToiletMkCluster;
+	
+	var openInfoWin = new Array();
+	
+	var myLatLng = {lat: 22.6210555, lng: 120.3055912};
+	
+	var geeMap;
+	
+	//var startMk;
+	function initMap() {
+	
+	  geeMap = new google.maps.Map(document.getElementById('map'), {
+		center: myLatLng,
+		zoom: 14
+	  });
+	  
+	  //var infoWindow = new google.maps.InfoWindow({map: geeMap});
+	  /*
+	  // Try HTML5 geolocation.
+	  if (navigator.geolocation) {
+		navigator.geolocation.getCurrentPosition(function(position) {
+		  var pos = {
+			lat: position.coords.latitude,
+			lng: position.coords.longitude
+		  };
+
+		  //infoWindow.setPosition(pos);
+		  //infoWindow.setContent('Location found.');
+		  geeMap.setCenter(pos);
+		}, function() {
+		  handleLocationError(true, infoWindow, geeMap.getCenter());
+		});
+	  } else {
+		// Browser doesn't support Geolocation
+		handleLocationError(false, infoWindow, geeMap.getCenter());
+	  }
+	  */
+		var centerControlDiv = document.createElement('div'); 
+		var centerControl = new CenterControl(centerControlDiv, geeMap); 
+
+		centerControlDiv.index = 1; 
+		geeMap.controls[google.maps.ControlPosition.TOP_RIGHT].push(centerControlDiv);
+		
+	}
+	
+	function handleLocationError(browserHasGeolocation, infoWindow, pos) {
+	  infoWindow.setPosition(pos);
+	  infoWindow.setContent(browserHasGeolocation ?
+							'Error: The Geolocation service failed.' :
+							'Error: Your browser doesn\'t support geolocation.');
+	}
+	
+	function CenterControl(controlDiv, map) { 
+
+		// Set CSS for the control border 
+		var controlUI = document.createElement('div'); 
+		controlUI.style.backgroundColor = '#fff'; 
+		controlUI.style.border = '2px solid #fff'; 
+		controlUI.style.borderRadius = '3px'; 
+		controlUI.style.boxShadow = '0 2px 6px rgba(0,0,0,.3)'; 
+		controlUI.style.cursor = 'pointer'; 
+		controlUI.style.marginBottom = '22px'; 
+		controlUI.style.marginTop = '5px'; 
+		controlUI.style.textAlign = 'center'; 
+		controlUI.title = 'Click to recenter the map'; 
+		controlDiv.appendChild(controlUI); 
+
+		// Set CSS for the control interior 
+		var controlText = document.createElement('div'); 
+		controlText.style.color = 'rgb(25,25,25)'; 
+		controlText.style.fontFamily = 'Roboto,Arial,sans-serif'; 
+		controlText.style.fontSize = '9px'; 
+		controlText.style.lineHeight = '12px'; 
+		controlText.style.paddingLeft = '5px'; 
+		controlText.style.paddingRight = '5px'; 
+		controlText.innerHTML = '<form name="detail_form">'
+		+ '<select	id="roadSectionSelect" name="detail_level" '
+		+ 'onchange="showMarker(this.options[this.selectedIndex].value)">' 
+		+ '<option value="clear">Select Info</option>' 
+		+ '<option value="cbike">C-Bike</option>' 
+		+ '<option value="wifi">Wi-Fi</option>' 
+		+ '<option value="atm">ATM</option>' 
+		+ '<option value="toilet">Public Toilet</option>' 
+		+ '</select></form>'; 
+		controlUI.appendChild(controlText); 
+		}
+	
+	function showMarker(show){
+		
+		clearMarker();
+		
+		switch(show){
+			case 'cbike' : 
+						addCbikeMk();
+						break;
+			case 'wifi' : 
+						addItwMk();
+						break;
+			case 'atm' : 
+						addAtmMk();
+						break;
+			case 'toilet' : 
+						addPublicToiletMk();
+						break;
+			default : 
+						clearMarker();
+						break;
+		}
+	}
+	
+	function clearMarker(){
+		if(cbMkCluster){
+			cbMkCluster.clearMarkers();
+		}
+		if(iTaiwanMkCluster){
+		iTaiwanMkCluster.clearMarkers();
+		}
+		if(atmMkCluster){
+		atmMkCluster.clearMarkers();
+		}
+		if(publicToiletMkCluster){
+		publicToiletMkCluster.clearMarkers();
+		}
+	}
+	
+	function addCbikeMk(){
+		cbMkCluster = addMkFormJson(cbikeJsonMK, cbikeJsonObj,'http://i.imgur.com/dQA0lPY.png');
+		//cbMkCluster.clearMarkers();
+	}
+	
+	function addItwMk(){
+		iTaiwanMkCluster = addMkFormJson(iTaiwanJsonMK, iTaiwanJsonObj,'http://i.imgur.com/s09WQSW.png');
+		//iTaiwanMkCluster.clearMarkers();
+	}
+	//'http://i.imgur.com/EVBD6Df.png'
+	function addAtmMk(){
+		atmMkCluster = addMkFormJson(atmJsonMK, atmJsonObj,'http://i.imgur.com/4ffYx1m.png');
+		//atmMkCluster.clearMarkers();
+	}
+	
+	function addPublicToiletMk(){
+		publicToiletMkCluster = addMkFormJson(publicToiletJsonMK, publicToiletJsonObj, 'http://imgur.com/jGKi1zN.png');
+		//publicToiletMkCluster.clearMarkers();
+	}
+	
+	function addMkFormJson(markerArr, dataObj , iconUrl){
+	
+		for(var i=0;i < dataObj.data.length ; i++){
+			addMarker(markerArr,dataObj.data[i], iconUrl);
+		}
+		
+		var options = {
+            imagePath: 'images/m'
+        };
+
+       return new MarkerClusterer(geeMap, markerArr, options);
+	}
+	
+	//打座標至圖面
+	function addMarker(markerArr, dataObj, iconUrl) {
+
+		var stationLatlng = new google.maps.LatLng(dataObj.Lat, dataObj.Lng);
+		
+		var marker = new google.maps.Marker({
+			position: stationLatlng,
+			map: geeMap,
+			title: dataObj.name,
+			icon: iconUrl
+		});
+		
+		var contentString = '<div id="content">'+
+						  '<div id="siteNotice">'+
+						  '</div>'+
+						  '<h1 id="firstHeading" class="firstHeading">'+ dataObj.name +'</h1>'+
+						  dataObj.address +
+						  '</div>'+
+						  '</div>';
+		
+		 var infowindow = new google.maps.InfoWindow({
+			content: contentString
+		  });
+		
+		openInfoWin.push(infowindow);
+		
+		marker.addListener('click', function() {
+			for(var i = 0 ; i < openInfoWin.length ; i++){
+				openInfoWin[i].close();
+			}
+			infowindow.open(geeMap, marker);
+		  });
+		
+		markerArr.push(marker);
+	}
+	
+	// Deletes all markers in the array by removing references to them.
+	function deleteMarkers(markerArr) {
+		clearMarkers(markerArr);
+		markerArr = [];
+	}
+	
+	 // Sets the map on all markers in the array.
+	function setMapOnAll(markerArr,gmap) {
+		for (var i = 0; i < markerArr.length; i++) {
+			markerArr[i].setMap(gmap);
+		}
+	}
+
+	// Removes the markers from the map, but keeps them in the array.
+	function clearMarkers(markerArr) {
+		setMapOnAll(markerArr,null);
+	}
+
+    </script>
+	<script src="js-marker-clusterer.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBc262wGp_HJL9ffpzHZY6DaA9d7wsgYSg&callback=initMap"
+        async defer></script>
+  </body>
+</html>
